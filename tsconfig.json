@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "module": "ESNext",
+        "target": "ES2020",
+        "esModuleInterop": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "outDir": "./dist",
+        "paths": {
+            "@": ["."]
+        },
+        "allowJs": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

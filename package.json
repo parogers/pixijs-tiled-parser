@@ -1,0 +1,26 @@
+{
+    "name": "@parogers/pixijs-tiled-parser",
+    "version": "0.0.1",
+    "description": "A simple parsing library for tiled map editor files for use with PixiJS",
+    "license": "GPL-3.0",
+    "author": "Petrie Rogers",
+    "homepage": "https://github.com/parogers/pixijs-tiled-parsing",
+    "main": "./dist/pixijs-tiled-parser.umd.js",
+    "module": "./dist/pixijs-tiled-parser.mjs",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "vite build -c vite.config.mjs",
+        "build-watch": "vite build -c vite.config.mjs --watch",
+        "lint": "tsc --project ./tsconfig.json --noEmit",
+        "test": "vitest"
+    },
+    "peerDependencies": {
+        "pixi.js": "^8.19.0"
+    },
+    "devDependencies": {
+        "typescript": "^6.0.3",
+        "unplugin-dts": "^1.0.3",
+        "vite": "^8.2.1",
+        "vitest": "^4.1.10"
+    }
+}
