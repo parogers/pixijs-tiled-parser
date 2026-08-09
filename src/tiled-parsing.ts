@@ -2,8 +2,26 @@
 import * as PIXI from 'pixi.js';
 
 
-// TODO - placeholders
-export type TiledLayer = any;
+export type TiledGridLayer = {
+    name: string;
+    grid: number[][];
+};
+
+
+export type TiledObjectGroup = {
+    name: string;
+    objects: TiledObject[];
+};
+
+
+export type TiledGroup = {
+    name: string;
+    children: TiledChild[];
+}
+
+
+export type TiledChild = TiledGridLayer | TiledObjectGroup | TiledGroup;
+
 
 export type TiledMap = {
     name: string;
@@ -12,8 +30,8 @@ export type TiledMap = {
     offsetX: number;
     offsetY: number;
     tilesetRefs: TilesetRef[];
-    layers: TiledLayer[];
     groups: TiledMap[];
+    children: TiledChild[];
     properties: { [name: string]: any };
 }
 
@@ -39,7 +57,7 @@ export type Tileset = {
 }
 
 
-export type Entity = {
+export type TiledObject = {
     name: string;
     type: string;
     x: number;
@@ -48,6 +66,18 @@ export type Entity = {
     height: number;
     facing: number;
     properties: { [name: string]: any };
+}
+
+
+function isTiledGridLayer(data: unknown): data is TiledGridLayer {
+    const layer = data as TiledGridLayer;
+    return !!(layer && layer.grid !== undefined);
+}
+
+
+function isTiledObjectGroup(data: unknown): data is TiledObjectGroup {
+    const group = data as TiledObjectGroup;
+    return !!(group && group.objects !== undefined);
 }
 
 
@@ -123,9 +153,9 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
         offsetX: 0,
         offsetY: 0,
         tilesetRefs: [],
-        layers: [],
         groups: [],
         properties: [],
+        children: [],
     };
     Array.from(doc.children).forEach(child => {
         if (child.nodeName === 'tileset') {
@@ -139,10 +169,10 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
             const width = getIntAttribute(child, 'width');
             const height = getIntAttribute(child, 'height');
             const layer = {
-                name: child.getAttribute('name'),
+                name: child.getAttribute('name') ?? '',
                 grid: parseGrid(child.children[0].textContent, width, height),
             };
-            map.layers.push(layer);
+            map.children.push(layer);
         } else if (child.tagName === 'objectgroup') {
             const objects = Array.from(child.children).map(data => {
                 return {
@@ -157,13 +187,14 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
                 };
             });
             const layer = {
-                name: child.getAttribute('name'),
+                name: child.getAttribute('name') ?? '',
                 objects: objects,
             };
-            map.layers.push(layer);
+            map.children.push(layer);
         } else if (child.tagName === 'group') {
             const group = parseTiledMap(child, baseURL);
             map.groups.push(group);
+            map.children.push(group);
         } else if (child.tagName === 'properties') {
             map.properties = parseObjectProperties(child);
         }
@@ -216,11 +247,11 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
         let endCol = 0;
         const marginTop = sub.properties['margin-top'] ?? 0;
         const marginBottom = sub.properties['margin-bottom'] ?? 0;
-        for (let layer of sub.layers) {
-            if (layer.grid) {
+        for (let child of sub.children) {
+            if (isTiledGridLayer(child)) {
                 for (let row = 0; row < map.rows; row++) {
                     for (let col = 0; col < map.cols; col++) {
-                        if (layer.grid[row][col]) {
+                        if (child.grid[row][col]) {
                             startRow = Math.min(startRow, row);
                             startCol = Math.min(startCol, col);
                             endRow = Math.max(endRow, row);
@@ -236,12 +267,12 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
         const offsetY = startRow*(map.tilesetRefs[0].tileset?.tileHeight ?? 0);
         sub.offsetX = offsetX;
         sub.offsetY = offsetY;
-        for (let layer of sub.layers) {
-            if (layer.grid) {
-                layer.grid = sliceGrid(layer.grid, startRow, endRow, startCol, endCol);
+        for (let child of sub.children) {
+            if (isTiledGridLayer(child)) {
+                child.grid = sliceGrid(child.grid, startRow, endRow, startCol, endCol);
             }
-            if (layer.objects) {
-                for (let obj of layer.objects) {
+            if (isTiledObjectGroup(child)) {
+                for (let obj of child.objects) {
                     obj.x -= offsetX;
                     obj.y -= offsetY;
                 }
