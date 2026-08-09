@@ -111,7 +111,7 @@ function parseObjectProperties(node: Element): { [key: string]: string } {
     );
 }
 
-function parseTiledMap(doc: Element): TiledMap {
+function parseTiledMap(doc: Element, baseURL: string): TiledMap {
     if (doc.nodeName !== 'map' && doc.nodeName !== 'group') {
         console.error('file is not a tiled map, doc node is', doc.nodeName);
         throw Error('file is not a tiled map');
@@ -129,10 +129,11 @@ function parseTiledMap(doc: Element): TiledMap {
     };
     Array.from(doc.children).forEach(child => {
         if (child.nodeName === 'tileset') {
+            const src = getAttribute(child, 'source');
             map.tilesetRefs.push({
-                src: getAttribute(child, 'source'),
+                src: src,
                 firstGID: getIntAttribute(child, 'firstgid'),
-                tileset: null, // loaded later
+                tileset: null, // filled in later
             });
         } else if (child.nodeName === 'layer') {
             const width = getIntAttribute(child, 'width');
@@ -161,7 +162,7 @@ function parseTiledMap(doc: Element): TiledMap {
             };
             map.layers.push(layer);
         } else if (child.tagName === 'group') {
-            const group = parseTiledMap(child);
+            const group = parseTiledMap(child, baseURL);
             map.groups.push(group);
         } else if (child.tagName === 'properties') {
             map.properties = parseObjectProperties(child);
@@ -191,18 +192,18 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
         console.error('unable to parse tiled map:', mapText);
         throw Error('unable to parse tiled map');
     }
-    const map = parseTiledMap(data.documentElement);
+    const map = parseTiledMap(data.documentElement, baseURL);
     // Backfill the tileset definitions
     for (let tilesetRef of map.tilesetRefs) {
-        const tilesetText = await PIXI.Assets.load({
-            src: baseURL + '/' + tilesetRef.src,
-            alias: 'tiles',
-            parser: 'loadTxt',
-        });
         try {
+            const tilesetText = await PIXI.Assets.load({
+                src: baseURL + tilesetRef.src,
+                alias: 'tiles',
+                parser: 'loadTxt',
+            });
             const tileset = parseTileset(tilesetText);
             tilesetRef.tileset = tileset;
-            tileset.texture = await PIXI.Assets.load(baseURL + tileset.source);
+            tilesetRef.tileset.texture = await PIXI.Assets.load(baseURL + tileset.source);
         } catch(error) {
             console.error('error parsing tileset:', tilesetRef.src);
             throw error;
