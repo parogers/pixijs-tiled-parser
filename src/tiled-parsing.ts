@@ -176,8 +176,8 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
         } else if (child.tagName === 'objectgroup') {
             const objects = Array.from(child.children).map(data => {
                 return {
-                    name: getAttribute(data, 'name'),
-                    type: getAttribute(data, 'type'),
+                    name: data.getAttribute('name') ?? '',
+                    type: data.getAttribute('type') ?? '',
                     x: getIntAttribute(data, 'x'),
                     y: getIntAttribute(data, 'y'),
                     width: getIntAttribute(data, 'width'),
