@@ -193,7 +193,9 @@ async function parseChildren(doc: Element, baseURL: string): TiledMap {
             const group = await parseGroup(child, baseURL);
             children.push(group);
         } else if (child.tagName === 'properties') {
-            properties = parseObjectProperties(child);
+            Object.entries(parseObjectProperties(child)).forEach(([key, value]) => {
+                properties[key] = value;
+            });
         }
     }
     return {

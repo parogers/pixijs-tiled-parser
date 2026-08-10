@@ -32,7 +32,21 @@ test('loads a parses an empty map', async () => {
     expect(map.children[0].grid[0].length).toBe(32);
     expect(map.children[0].grid[0][0]).toBe(0);
     expect(fetch).toHaveBeenCalled('http://example.com/test.tmx');
-})
+});
+
+
+test('loads map properties', async () => {
+    fetch.mockReturnValue({
+        text: async function() {
+            return await readFile('./tests/map-properties.tmx', { encoding: 'utf8' });
+        }
+    });
+    const map = await loadTiledMap('http://example.com/test.tmx');
+    expect(map.properties).toEqual({
+        'abba' : 'testing',
+        'hello' : 'world',
+    });
+});
 
 
 function makeResponse(src: string) {
