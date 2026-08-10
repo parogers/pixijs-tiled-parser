@@ -1,6 +1,7 @@
 
 import * as PIXI from 'pixi.js';
 import { loadTiledMap } from './tiled-parsing';
+export { loadTiledMap }
 
 export const TILED_MAP_LOADER = {
     id: 'pixijs-tiled-parser/map-loader',

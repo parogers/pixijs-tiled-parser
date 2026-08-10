@@ -1,6 +1,4 @@
 
-import * as PIXI from 'pixi.js';
-
 
 export type TiledGridLayer = {
     name: string;
@@ -27,6 +25,8 @@ export type TiledMap = {
     name: string;
     rows: number;
     cols: number;
+    tileWidth: number;
+    tileHeight: number;
     offsetX: number;
     offsetY: number;
     tilesetRefs: TilesetRef[];
@@ -53,7 +53,6 @@ export type Tileset = {
     source: string;
     sourceWidth: number;
     sourceHeight: number;
-    texture: PIXI.Texture|null;
 }
 
 
@@ -106,6 +105,9 @@ function parseTileset(text: string): Tileset {
         console.error('unable to parse tileset:', text);
         throw Error('unable to parse tileset');
     }
+    if (data.documentElement?.tagName !== 'tileset') {
+        throw Error('not a tileset file');
+    }
     const tileWidth = getIntAttribute(tileset, 'tilewidth');
     const tileHeight = getIntAttribute(tileset, 'tileheight');
     const spacing = getIntAttribute(tileset, 'spacing');
@@ -150,6 +152,8 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
         name: doc.getAttribute('name') ?? '',
         cols: getIntAttribute(doc, 'width'),
         rows: getIntAttribute(doc, 'height'),
+        tileWidth: getIntAttribute(doc, 'tilewidth'),
+        tileHeight: getIntAttribute(doc, 'tileheight'),
         offsetX: 0,
         offsetY: 0,
         tilesetRefs: [],
@@ -227,14 +231,9 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
     // Backfill the tileset definitions
     for (let tilesetRef of map.tilesetRefs) {
         try {
-            const tilesetText = await PIXI.Assets.load({
-                src: baseURL + tilesetRef.src,
-                alias: 'tiles',
-                parser: 'loadTxt',
-            });
+            const tilesetText = await (await fetch(baseURL + tilesetRef.src)).text();
             const tileset = parseTileset(tilesetText);
             tilesetRef.tileset = tileset;
-            tilesetRef.tileset.texture = await PIXI.Assets.load(baseURL + tileset.source);
         } catch(error) {
             console.error('error parsing tileset:', tilesetRef.src);
             throw error;
@@ -263,8 +262,8 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
         }
         startRow = Math.max(startRow - marginTop, 0);
         endRow = Math.min(endRow + marginBottom, map.rows-1);
-        const offsetX = startCol*(map.tilesetRefs[0].tileset?.tileWidth ?? 0);
-        const offsetY = startRow*(map.tilesetRefs[0].tileset?.tileHeight ?? 0);
+        const offsetX = startCol*map.tileWidth;
+        const offsetY = startRow*map.tileHeight;
         sub.offsetX = offsetX;
         sub.offsetY = offsetY;
         for (let child of sub.children) {
