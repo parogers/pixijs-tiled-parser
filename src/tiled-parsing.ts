@@ -30,7 +30,6 @@ export type TiledMap = {
     offsetX: number;
     offsetY: number;
     tilesetRefs: TilesetRef[];
-    groups: TiledMap[];
     children: TiledChild[];
     properties: { [name: string]: any };
 }
@@ -63,7 +62,7 @@ export type TiledObject = {
     y: number;
     width: number;
     height: number;
-    facing: number;
+    flippedX: number;
     properties: { [name: string]: any };
 }
 
@@ -143,31 +142,26 @@ function parseObjectProperties(node: Element): { [key: string]: string } {
     );
 }
 
-function parseTiledMap(doc: Element, baseURL: string): TiledMap {
-    if (doc.nodeName !== 'map' && doc.nodeName !== 'group') {
-        console.error('file is not a tiled map, doc node is', doc.nodeName);
-        throw Error('file is not a tiled map');
-    }
-    const map: TiledMap = {
-        name: doc.getAttribute('name') ?? '',
-        cols: getIntAttribute(doc, 'width'),
-        rows: getIntAttribute(doc, 'height'),
-        tileWidth: getIntAttribute(doc, 'tilewidth'),
-        tileHeight: getIntAttribute(doc, 'tileheight'),
-        offsetX: 0,
-        offsetY: 0,
-        tilesetRefs: [],
-        groups: [],
-        properties: [],
-        children: [],
-    };
-    Array.from(doc.children).forEach(child => {
+
+async function loadTileset(url: string): Tileset {
+    const tilesetText = await (await fetch(url)).text();
+    const tileset = parseTileset(tilesetText);
+    return tileset;
+}
+
+
+async function parseChildren(doc: Element, baseURL: string): TiledMap {
+    const tilesetRefs = [];
+    const children = [];
+    const properties = {};
+    for (let child of doc.children) {
         if (child.nodeName === 'tileset') {
             const src = getAttribute(child, 'source');
-            map.tilesetRefs.push({
+            const tileset = await loadTileset(baseURL + src);
+            tilesetRefs.push({
                 src: src,
                 firstGID: getIntAttribute(child, 'firstgid'),
-                tileset: null, // filled in later
+                tileset: tileset,
             });
         } else if (child.nodeName === 'layer') {
             const width = getIntAttribute(child, 'width');
@@ -176,7 +170,7 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
                 name: child.getAttribute('name') ?? '',
                 grid: parseGrid(child.children[0].textContent, width, height),
             };
-            map.children.push(layer);
+            children.push(layer);
         } else if (child.tagName === 'objectgroup') {
             const objects = Array.from(child.children).map(data => {
                 return {
@@ -186,7 +180,7 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
                     y: getIntAttribute(data, 'y'),
                     width: getIntAttribute(data, 'width'),
                     height: getIntAttribute(data, 'height'),
-                    facing: (getIntAttribute(data, 'gid') & (2**31)) ? -1 : 1,
+                    flippedX: !!(getIntAttribute(data, 'gid') & (2**31)),
                     properties: parseObjectProperties(data),
                 };
             });
@@ -194,15 +188,50 @@ function parseTiledMap(doc: Element, baseURL: string): TiledMap {
                 name: child.getAttribute('name') ?? '',
                 objects: objects,
             };
-            map.children.push(layer);
+            children.push(layer);
         } else if (child.tagName === 'group') {
-            const group = parseTiledMap(child, baseURL);
-            map.groups.push(group);
-            map.children.push(group);
+            const group = await parseGroup(child, baseURL);
+            children.push(group);
         } else if (child.tagName === 'properties') {
-            map.properties = parseObjectProperties(child);
+            properties = parseObjectProperties(child);
         }
-    });
+    }
+    return {
+        tilesetRefs,
+        children,
+        properties,
+    };
+}
+
+
+async function parseGroup(doc: Element, baseURL: string): TiledGroup {
+    const { children } = await parseChildren(doc, baseURL);
+    const group: TiledGroup = {
+        name: doc.getAttribute('name') ?? '',
+        children: children,
+    };
+    return group;
+}
+
+
+async function parseTiledMap(doc: Element, baseURL: string): TiledMap {
+    if (doc.nodeName !== 'map' && doc.nodeName !== 'group') {
+        console.error('file is not a tiled map, doc node is', doc.nodeName);
+        throw Error('file is not a tiled map');
+    }
+    const { tilesetRefs, children, properties } = await parseChildren(doc, baseURL);
+    const map: TiledMap = {
+        name: doc.getAttribute('name') ?? '',
+        cols: getIntAttribute(doc, 'width'),
+        rows: getIntAttribute(doc, 'height'),
+        tileWidth: getIntAttribute(doc, 'tilewidth'),
+        tileHeight: getIntAttribute(doc, 'tileheight'),
+        offsetX: 0,
+        offsetY: 0,
+        tilesetRefs: tilesetRefs,
+        properties: properties,
+        children: children,
+    };
     return map;
 }
 
@@ -227,57 +256,46 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
         console.error('unable to parse tiled map:', mapText);
         throw Error('unable to parse tiled map');
     }
-    const map = parseTiledMap(data.documentElement, baseURL);
-    // Backfill the tileset definitions
-    for (let tilesetRef of map.tilesetRefs) {
-        try {
-            const tilesetText = await (await fetch(baseURL + tilesetRef.src)).text();
-            const tileset = parseTileset(tilesetText);
-            tilesetRef.tileset = tileset;
-        } catch(error) {
-            console.error('error parsing tileset:', tilesetRef.src);
-            throw error;
-        }
-    }
-    for (let sub of map.groups) {
-        let startRow = map.rows;
-        let startCol = map.cols;
-        let endRow = 0;
-        let endCol = 0;
-        const marginTop = sub.properties['margin-top'] ?? 0;
-        const marginBottom = sub.properties['margin-bottom'] ?? 0;
-        for (let child of sub.children) {
-            if (isTiledGridLayer(child)) {
-                for (let row = 0; row < map.rows; row++) {
-                    for (let col = 0; col < map.cols; col++) {
-                        if (child.grid[row][col]) {
-                            startRow = Math.min(startRow, row);
-                            startCol = Math.min(startCol, col);
-                            endRow = Math.max(endRow, row);
-                            endCol = Math.max(endCol, col);
-                        }
-                    }
-                }
-            }
-        }
-        startRow = Math.max(startRow - marginTop, 0);
-        endRow = Math.min(endRow + marginBottom, map.rows-1);
-        const offsetX = startCol*map.tileWidth;
-        const offsetY = startRow*map.tileHeight;
-        sub.offsetX = offsetX;
-        sub.offsetY = offsetY;
-        for (let child of sub.children) {
-            if (isTiledGridLayer(child)) {
-                child.grid = sliceGrid(child.grid, startRow, endRow, startCol, endCol);
-            }
-            if (isTiledObjectGroup(child)) {
-                for (let obj of child.objects) {
-                    obj.x -= offsetX;
-                    obj.y -= offsetY;
-                }
-            }
-        }
-    }
+    const map = await parseTiledMap(data.documentElement, baseURL);
+    // for (let sub of map.groups) {
+    //     let startRow = map.rows;
+    //     let startCol = map.cols;
+    //     let endRow = 0;
+    //     let endCol = 0;
+    //     const marginTop = sub.properties['margin-top'] ?? 0;
+    //     const marginBottom = sub.properties['margin-bottom'] ?? 0;
+    //     for (let child of sub.children) {
+    //         if (isTiledGridLayer(child)) {
+    //             for (let row = 0; row < map.rows; row++) {
+    //                 for (let col = 0; col < map.cols; col++) {
+    //                     if (child.grid[row][col]) {
+    //                         startRow = Math.min(startRow, row);
+    //                         startCol = Math.min(startCol, col);
+    //                         endRow = Math.max(endRow, row);
+    //                         endCol = Math.max(endCol, col);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     startRow = Math.max(startRow - marginTop, 0);
+    //     endRow = Math.min(endRow + marginBottom, map.rows-1);
+    //     const offsetX = startCol*map.tileWidth;
+    //     const offsetY = startRow*map.tileHeight;
+    //     sub.offsetX = offsetX;
+    //     sub.offsetY = offsetY;
+    //     for (let child of sub.children) {
+    //         if (isTiledGridLayer(child)) {
+    //             child.grid = sliceGrid(child.grid, startRow, endRow, startCol, endCol);
+    //         }
+    //         if (isTiledObjectGroup(child)) {
+    //             for (let obj of child.objects) {
+    //                 obj.x -= offsetX;
+    //                 obj.y -= offsetY;
+    //             }
+    //         }
+    //     }
+    // }
     return map;
 }
 

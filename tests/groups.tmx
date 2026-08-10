@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="3" height="4" tilewidth="8" tileheight="8" infinite="0" nextlayerid="7" nextobjectid="1">
+ <tileset firstgid="1" source="tiles.tsx"/>
+ <layer id="6" name="Tile Layer 4" width="3" height="4">
+  <data encoding="csv">
+0,0,0,
+2,0,0,
+0,0,2,
+0,0,0
+</data>
+ </layer>
+ <group id="3" name="Group Layer 1">
+  <group id="4" name="Group Layer 2">
+   <layer id="5" name="Tile Layer 3" width="3" height="4">
+    <data encoding="csv">
+0,0,0,
+0,4,0,
+0,4,0,
+0,0,0
+</data>
+   </layer>
+  </group>
+  <layer id="2" name="Tile Layer 2" width="3" height="4">
+   <data encoding="csv">
+1,0,0,
+0,0,0,
+0,0,0,
+0,0,1
+</data>
+  </layer>
+  <layer id="1" name="Tile Layer 1" width="3" height="4">
+   <data encoding="csv">
+0,0,2,
+0,0,0,
+0,0,0,
+2,0,0
+</data>
+  </layer>
+ </group>
+</map>
