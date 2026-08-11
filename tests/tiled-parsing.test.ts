@@ -1,52 +1,8 @@
 
-const { readFile } = require('node:fs/promises');
+import * as PIXI from 'pixi.js';
+// import { readFile } from 'node:fs/promises';
 import { vi, expect, test, beforeEach } from 'vitest';
 import { loadTiledMap } from '../src/index';
-import { JSDOM } from 'jsdom';
-
-global.DOMParser = new JSDOM().window.DOMParser;
-
-vi.spyOn(globalThis, 'fetch');
-
-beforeEach(() => {
-    fetch.mockClear();
-})
-
-
-test('loads a parses an empty map', async () => {
-    fetch.mockReturnValue({
-        text: async function() {
-            return await readFile('./tests/empty.tmx', { encoding: 'utf8' });
-        }
-    });
-    const map = await loadTiledMap('http://example.com/test.tmx');
-    expect(map.rows).toBe(24);
-    expect(map.cols).toBe(32);
-    expect(map.tileWidth).toBe(8);
-    expect(map.tileHeight).toBe(8);
-    expect(map.tilesetRefs).toEqual([]);
-    expect(map.properties).toEqual({});
-    expect(map.children.length).toEqual(1);
-    expect(map.children[0].name).toBe('Tile Layer 1');
-    expect(map.children[0].grid.length).toBe(24);
-    expect(map.children[0].grid[0].length).toBe(32);
-    expect(map.children[0].grid[0][0]).toBe(0);
-    expect(fetch).toHaveBeenCalled('http://example.com/test.tmx');
-});
-
-
-test('loads map properties', async () => {
-    fetch.mockReturnValue({
-        text: async function() {
-            return await readFile('./tests/map-properties.tmx', { encoding: 'utf8' });
-        }
-    });
-    const map = await loadTiledMap('http://example.com/test.tmx');
-    expect(map.properties).toEqual({
-        'abba' : 'testing',
-        'hello' : 'world',
-    });
-});
 
 
 function makeResponse(src: string) {
@@ -58,29 +14,45 @@ function makeResponse(src: string) {
 }
 
 
-test('loads tilesets and layers', async () => {
-    fetch.mockImplementation((url: string) => {
-        if (url === 'http://example.com/tiles.tsx') {
-            return makeResponse('./tests/tiles.tsx');
-        }
-        if (url === 'http://example.com/tiles2.tsx') {
-            return makeResponse('./tests/tiles2.tsx');
-        }
-        return makeResponse('./tests/grid-layers.tmx');
+test('loads a parses an empty map', async () => {
+    const map = await loadTiledMap('tests/empty.tmx');
+    expect(map.rows).toBe(24);
+    expect(map.cols).toBe(32);
+    expect(map.tileWidth).toBe(8);
+    expect(map.tileHeight).toBe(8);
+    expect(map.tilesetRefs).toEqual([]);
+    expect(map.properties).toEqual({});
+    expect(map.children.length).toEqual(1);
+    expect(map.children[0].name).toBe('Tile Layer 1');
+    expect(map.children[0].grid.length).toBe(24);
+    expect(map.children[0].grid[0].length).toBe(32);
+    expect(map.children[0].grid[0][0]).toBe(0);
+});
+
+
+test('loads map properties', async () => {
+    const map = await loadTiledMap('tests/map-properties.tmx');
+    expect(map.properties).toEqual({
+        'abba' : 'testing',
+        'hello' : 'world',
     });
-    const map = await loadTiledMap('http://example.com/test.tmx');
+});
+
+
+test('loads tilesets and layers', async () => {
+    const map = await loadTiledMap('tests/grid-layers.tmx');
     expect(map.rows).toBe(4);
     expect(map.cols).toBe(3);
     expect(map.tileWidth).toBe(8);
     expect(map.tileHeight).toBe(8);
-    expect(map.tilesetRefs).toEqual([
+    expect(map.tilesetRefs).toMatchObject([
         {
             firstGID: 1,
-            src: "tiles.tsx",
+            src: "tiles.xml",
             tileset: {
                 columns: 3,
                 margin: 1,
-                source: "http://example.com/tiles.png",
+                source: "tests/tiles.png",
                 sourceHeight: 32,
                 sourceWidth: 32,
                 spacing: 1,
@@ -91,11 +63,11 @@ test('loads tilesets and layers', async () => {
         },
         {
             firstGID: 10,
-            src: "tiles2.tsx",
+            src: "tiles2.xml",
             tileset: {
                 columns: 3,
                 margin: 1,
-                source: "http://example.com/tiles2.png",
+                source: "tests/tiles2.png",
                 sourceHeight: 32,
                 sourceWidth: 32,
                 spacing: 1,
@@ -122,13 +94,7 @@ test('loads tilesets and layers', async () => {
 
 
 test('loads group layers', async () => {
-    fetch.mockImplementation((url: string) => {
-        if (url === 'http://example.com/tiles.tsx') {
-            return makeResponse('./tests/tiles.tsx');
-        }
-        return makeResponse('./tests/groups.tmx');
-    });
-    const map = await loadTiledMap('http://example.com/test.tmx');
+    const map = await loadTiledMap('tests/groups.tmx');
     expect(map.children.length).toBe(2);
     expect(map.children[0].name).toBe('Tile Layer 4');
     expect(map.children[1].name).toBe('Group Layer 1');
@@ -139,13 +105,7 @@ test('loads group layers', async () => {
 
 
 test('loads objects', async () => {
-    fetch.mockImplementation((url: string) => {
-        if (url === 'http://example.com/tiles.tsx') {
-            return makeResponse('./tests/tiles.tsx');
-        }
-        return makeResponse('./tests/objects.tmx');
-    });
-    const map = await loadTiledMap('http://example.com/test.tmx');
+    const map = await loadTiledMap('tests/objects.tmx');
     expect(map.children.length).toBe(2);
     expect(map.children[0].name).toBe('Tile Layer 1');
     expect(map.children[1].name).toBe('Object Layer 1');
@@ -172,4 +132,4 @@ test('loads objects', async () => {
             hello: 'world',
         },
     });
-})
+});

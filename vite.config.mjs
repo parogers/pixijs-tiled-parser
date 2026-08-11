@@ -1,5 +1,6 @@
 
 import { defineConfig } from 'vite'
+import { playwright } from '@vitest/browser-playwright';
 import dts from 'unplugin-dts/vite'
 
 export default defineConfig({
@@ -21,4 +22,20 @@ export default defineConfig({
     plugins: [
         dts(),
     ],
+    test: {
+         browser: {
+             ui: false,
+             provider: playwright(),
+             enabled: true,
+             instances: [
+                 {
+                     browser: 'chromium',
+                     viewport: {
+                         width: 600,
+                         height: 400,
+                     },
+                 }
+             ],
+         },
+     },
 })
