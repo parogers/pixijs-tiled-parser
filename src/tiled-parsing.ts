@@ -1,4 +1,6 @@
 
+export type TiledProperties = { [name: string]: any };
+
 
 export type TiledGridLayer = {
     name: string;
@@ -31,7 +33,7 @@ export type TiledMap = {
     offsetY: number;
     tilesetRefs: TilesetRef[];
     children: TiledChild[];
-    properties: { [name: string]: any };
+    properties: TiledProperties;
 }
 
 
@@ -62,18 +64,18 @@ export type TiledObject = {
     y: number;
     width: number;
     height: number;
-    flippedX: number;
-    properties: { [name: string]: any };
+    flippedX: boolean;
+    properties: TiledProperties;
 }
 
 
-function isTiledGridLayer(data: unknown): data is TiledGridLayer {
+export function isTiledGridLayer(data: unknown): data is TiledGridLayer {
     const layer = data as TiledGridLayer;
     return !!(layer && layer.grid !== undefined);
 }
 
 
-function isTiledObjectGroup(data: unknown): data is TiledObjectGroup {
+export function isTiledObjectGroup(data: unknown): data is TiledObjectGroup {
     const group = data as TiledObjectGroup;
     return !!(group && group.objects !== undefined);
 }
@@ -124,7 +126,6 @@ function parseTileset(text: string): Tileset {
         source: getAttribute(image, 'source'),
         sourceWidth: getIntAttribute(image, 'width'),
         sourceHeight: getIntAttribute(image, 'height'),
-        texture: null, // filled in later
     };
 }
 
@@ -135,7 +136,7 @@ function parseGrid(text: string, width: number, height: number): number[][] {
     return grid;
 }
 
-function parseObjectProperties(node: Element): { [key: string]: string } {
+function parseObjectProperties(node: Element): TiledProperties {
     return Object.fromEntries(
         Array.from(node.getElementsByTagName('property'))
             .map(p => [p.getAttribute('name'), p.getAttribute('value')])
@@ -143,17 +144,21 @@ function parseObjectProperties(node: Element): { [key: string]: string } {
 }
 
 
-async function loadTileset(url: string): Tileset {
+async function loadTileset(url: string): Promise<Tileset> {
     const tilesetText = await (await fetch(url)).text();
     const tileset = parseTileset(tilesetText);
     return tileset;
 }
 
 
-async function parseChildren(doc: Element, baseURL: string): TiledMap {
+async function parseChildren(doc: Element, baseURL: string): Promise<{
+    tilesetRefs: TilesetRef[],
+    children: TiledChild[],
+    properties: TiledProperties,
+}> {
     const tilesetRefs = [];
     const children = [];
-    const properties = {};
+    const properties: TiledProperties = {};
     for (let child of doc.children) {
         if (child.nodeName === 'tileset') {
             const src = getAttribute(child, 'source');
@@ -206,7 +211,7 @@ async function parseChildren(doc: Element, baseURL: string): TiledMap {
 }
 
 
-async function parseGroup(doc: Element, baseURL: string): TiledGroup {
+async function parseGroup(doc: Element, baseURL: string): Promise<TiledGroup> {
     const { children } = await parseChildren(doc, baseURL);
     const group: TiledGroup = {
         name: doc.getAttribute('name') ?? '',
@@ -216,7 +221,7 @@ async function parseGroup(doc: Element, baseURL: string): TiledGroup {
 }
 
 
-async function parseTiledMap(doc: Element, baseURL: string): TiledMap {
+async function parseTiledMap(doc: Element, baseURL: string): Promise<TiledMap> {
     if (doc.nodeName !== 'map' && doc.nodeName !== 'group') {
         console.error('file is not a tiled map, doc node is', doc.nodeName);
         throw Error('file is not a tiled map');
