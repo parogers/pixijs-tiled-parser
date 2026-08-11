@@ -1,7 +1,13 @@
 
 import * as PIXI from 'pixi.js';
 import { loadTiledMap } from './tiled-parsing';
-export { loadTiledMap }
+import { makeSpritesheetFromTileset, loadSpritesheetFromTileset } from './map';
+
+export {
+    loadTiledMap,
+    makeSpritesheetFromTileset,
+    loadSpritesheetFromTileset,
+}
 
 export const TILED_MAP_LOADER = {
     id: 'pixijs-tiled-parser/map-loader',

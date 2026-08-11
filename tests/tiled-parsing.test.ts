@@ -80,7 +80,7 @@ test('loads tilesets and layers', async () => {
             tileset: {
                 columns: 3,
                 margin: 1,
-                source: "tiles.png",
+                source: "http://example.com/tiles.png",
                 sourceHeight: 32,
                 sourceWidth: 32,
                 spacing: 1,
@@ -95,7 +95,7 @@ test('loads tilesets and layers', async () => {
             tileset: {
                 columns: 3,
                 margin: 1,
-                source: "tiles2.png",
+                source: "http://example.com/tiles2.png",
                 sourceHeight: 32,
                 sourceWidth: 32,
                 spacing: 1,

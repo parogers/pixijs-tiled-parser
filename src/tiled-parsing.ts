@@ -27,7 +27,7 @@ function getIntAttribute(node: Element, name: string): number {
 }
 
 
-function parseTileset(text: string): Tileset {
+function parseTileset(text: string, baseURL: string): Tileset {
     const data = new DOMParser().parseFromString(text, 'text/xml');
     const tileset = data.documentElement;
     if (data.documentElement?.tagName === 'parsererror') {
@@ -51,7 +51,7 @@ function parseTileset(text: string): Tileset {
         margin: margin,
         columns: columns,
         tileCount: tileCount,
-        source: getAttribute(image, 'source'),
+        source: baseURL + getAttribute(image, 'source'),
         sourceWidth: getIntAttribute(image, 'width'),
         sourceHeight: getIntAttribute(image, 'height'),
     };
@@ -74,7 +74,7 @@ function parseObjectProperties(node: Element): TiledProperties {
 
 async function loadTileset(url: string): Promise<Tileset> {
     const tilesetText = await (await fetch(url)).text();
-    const tileset = parseTileset(tilesetText);
+    const tileset = parseTileset(tilesetText, getBaseURL(url));
     return tileset;
 }
 
@@ -233,55 +233,3 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
     // }
     return map;
 }
-
-
-// export function makeSpritesheetFromGrid(tileset: Tileset, tileNamePrefix: string) {
-//     const tiles = {};
-//     const rows = (tileset.tileCount / tileset.columns)|0 + 1;
-//     for (let row = 0; row < rows; row++) {
-//         for (let col = 0; col < tileset.columns; col++) {
-//             const x = tileset.margin + tileset.spacing*col + tileset.tileWidth*col;
-//             const y = tileset.margin + tileset.spacing*row + tileset.tileHeight*row;
-//             const index = Object.keys(tiles).length;
-//             if (index >= tileset.tileCount) {
-//                 break;
-//             }
-//             const name = tileNamePrefix + index;
-//             tiles[name] = {
-//                 frame: {
-//                     x: x,
-//                     y: y,
-//                     w: tileset.tileWidth,
-//                     h: tileset.tileHeight,
-//                 },
-//                 spriteSourceSize: {
-//                     x: x,
-//                     y: y,
-//                     w: tileset.tileWidth,
-//                     h: tileset.tileHeight,
-//                 },
-//                 sourceSize: {
-//                     w: tileset.tileWidth,
-//                     h: tileset.tileHeight,
-//                 },
-//                 anchor: {
-//                     x: 0,
-//                     y: 0,
-//                 }
-//             };
-//         }
-//     }
-//     const sheet = {
-//         frames: tiles,
-//         meta: {
-//             image: tileset.source,
-//             format: 'RGBA8888',
-//             size: {
-//                 w: tileset.sourceWidth,
-//                 h: tileset.sourceHeight,
-//             },
-//             scale: 1,
-//         },
-//     };
-//     return sheet;
-// }
