@@ -1,6 +1,5 @@
 
 import * as PIXI from 'pixi.js';
-// import { readFile } from 'node:fs/promises';
 import { vi, expect, test, beforeEach } from 'vitest';
 import { loadTiledMap } from '../src/index';
 
@@ -48,7 +47,7 @@ test('loads tilesets and layers', async () => {
     expect(map.tilesetRefs).toMatchObject([
         {
             firstGID: 1,
-            src: "tiles.xml",
+            src: "tests/tiles.xml",
             tileset: {
                 columns: 3,
                 margin: 1,
@@ -63,7 +62,7 @@ test('loads tilesets and layers', async () => {
         },
         {
             firstGID: 10,
-            src: "tiles2.xml",
+            src: "tests/tiles2.xml",
             tileset: {
                 columns: 3,
                 margin: 1,
@@ -90,7 +89,16 @@ test('loads tilesets and layers', async () => {
     expect(map.children[1].grid[0].length).toBe(3);
     expect(map.children[1].grid[0][0]).toBe(10);
     expect(map.children[1].grid[1][1]).toBe(2);
-})
+});
+
+
+test('loads spritesheets for tilesets', async () => {
+    const map = await loadTiledMap('tests/grid-layers.tmx');
+    expect(map.tilesetRefs[0].tileset.spritesheet).toBeTruthy();
+    expect(map.tilesetRefs[0].tileset.spritesheet.textures['tests/tiles-0']).toBeTruthy();
+    expect(map.tilesetRefs[1].tileset.spritesheet).toBeTruthy();
+    expect(map.tilesetRefs[1].tileset.spritesheet.textures['tests/tiles2-0']).toBeTruthy();
+});
 
 
 test('loads group layers', async () => {

@@ -1,4 +1,6 @@
 
+import * as PIXI from 'pixi.js';
+
 import {
     type TiledMap,
     type TiledGroup,
@@ -35,6 +37,7 @@ function parseTileset(text: string, baseURL: string): Tileset {
         throw Error('unable to parse tileset');
     }
     if (data.documentElement?.tagName !== 'tileset') {
+        console.error('expecting tileset tag but got:', data.documentElement?.tagName);
         throw Error('not a tileset file');
     }
     const tileWidth = getIntAttribute(tileset, 'tilewidth');
@@ -72,9 +75,99 @@ function parseObjectProperties(node: Element): TiledProperties {
 }
 
 
+export async function loadSpritesheetFromTileset(
+    tileset: Tileset,
+): PIXI.SpritesheetData {
+    function getPath(url: string): string {
+        try {
+             const path = new URL(url).pathname;
+             if (path) {
+                 return path;
+             }
+        } catch(error) {
+            if (error.name !== 'TypeError') {
+                throw error;
+            }
+        }
+        return url;
+    }
+    function getPrefix(url: string): string {
+        return getPath(removeExtension(url)) + '-';
+    }
+    const data = makeSpritesheetFromTileset(tileset, getPrefix(tileset.source));
+    const texture = await PIXI.Assets.load(tileset.source);
+    const sheet = new PIXI.Spritesheet(texture, data);
+    await sheet.parse();
+    return sheet;
+}
+
+
+export function makeSpritesheetFromTileset(
+    tileset: Tileset,
+    tileNamePrefix: string,
+): PIXI.SpritesheetData {
+    const tiles: any = {};
+    const rows = (tileset.tileCount / tileset.columns)|0 + 1;
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < tileset.columns; col++) {
+            const x = tileset.margin + tileset.spacing*col + tileset.tileWidth*col;
+            const y = tileset.margin + tileset.spacing*row + tileset.tileHeight*row;
+            const index = Object.keys(tiles).length;
+            if (index >= tileset.tileCount) {
+                break;
+            }
+            const name = tileNamePrefix + index;
+            tiles[name] = {
+                frame: {
+                    x: x,
+                    y: y,
+                    w: tileset.tileWidth,
+                    h: tileset.tileHeight,
+                },
+                spriteSourceSize: {
+                    x: x,
+                    y: y,
+                    w: tileset.tileWidth,
+                    h: tileset.tileHeight,
+                },
+                sourceSize: {
+                    w: tileset.tileWidth,
+                    h: tileset.tileHeight,
+                },
+                anchor: {
+                    x: 0,
+                    y: 0,
+                }
+            };
+        }
+    }
+    const sheet = {
+        frames: tiles,
+        meta: {
+            image: tileset.source,
+            format: 'RGBA8888',
+            size: {
+                w: tileset.sourceWidth,
+                h: tileset.sourceHeight,
+            },
+            scale: 1,
+        },
+    };
+    return sheet;
+}
+
+
+function removeExtension(fileName: string): string {
+    const index = fileName.lastIndexOf('.');
+    return fileName.slice(0, index);
+}
+
+
 async function loadTileset(url: string): Promise<Tileset> {
     const tilesetText = await (await fetch(url)).text();
     const tileset = parseTileset(tilesetText, getBaseURL(url));
+    const sheet = await loadSpritesheetFromTileset(tileset);
+    tileset.spritesheet = sheet;
     return tileset;
 }
 
@@ -89,8 +182,8 @@ async function parseChildren(doc: Element, baseURL: string): Promise<{
     const properties: TiledProperties = {};
     for (let child of doc.children) {
         if (child.nodeName === 'tileset') {
-            const src = getAttribute(child, 'source');
-            const tileset = await loadTileset(baseURL + src);
+            const src = baseURL + getAttribute(child, 'source');
+            const tileset = await loadTileset(src);
             tilesetRefs.push({
                 src: src,
                 firstGID: getIntAttribute(child, 'firstgid'),

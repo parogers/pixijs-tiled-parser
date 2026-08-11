@@ -57,6 +57,7 @@ export type Tileset = {
     source: string;
     sourceWidth: number;
     sourceHeight: number;
+    spritesheet: PIXI.Spritesheet | null;
 }
 
 
@@ -81,71 +82,4 @@ export function isTiledGridLayer(data: unknown): data is TiledGridLayer {
 export function isTiledObjectGroup(data: unknown): data is TiledObjectGroup {
     const group = data as TiledObjectGroup;
     return !!(group && group.objects !== undefined);
-}
-
-
-export async function loadSpritesheetFromTileset(
-    tileset: Tileset,
-    tileNamePrefix: string,
-): PIXI.SpritesheetData {
-    const data = makeSpritesheetFromTileset(tileset, tileNamePrefix);
-    const texture = await PIXI.Assets.load(tileset.source);
-    const sheet = new PIXI.Spritesheet(texture, data);
-    await sheet.parse();
-    return sheet;
-}
-
-
-export function makeSpritesheetFromTileset(
-    tileset: Tileset,
-    tileNamePrefix: string,
-): PIXI.SpritesheetData {
-    const tiles: any = {};
-    const rows = (tileset.tileCount / tileset.columns)|0 + 1;
-    for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < tileset.columns; col++) {
-            const x = tileset.margin + tileset.spacing*col + tileset.tileWidth*col;
-            const y = tileset.margin + tileset.spacing*row + tileset.tileHeight*row;
-            const index = Object.keys(tiles).length;
-            if (index >= tileset.tileCount) {
-                break;
-            }
-            const name = tileNamePrefix + index;
-            tiles[name] = {
-                frame: {
-                    x: x,
-                    y: y,
-                    w: tileset.tileWidth,
-                    h: tileset.tileHeight,
-                },
-                spriteSourceSize: {
-                    x: x,
-                    y: y,
-                    w: tileset.tileWidth,
-                    h: tileset.tileHeight,
-                },
-                sourceSize: {
-                    w: tileset.tileWidth,
-                    h: tileset.tileHeight,
-                },
-                anchor: {
-                    x: 0,
-                    y: 0,
-                }
-            };
-        }
-    }
-    const sheet = {
-        frames: tiles,
-        meta: {
-            image: tileset.source,
-            format: 'RGBA8888',
-            size: {
-                w: tileset.sourceWidth,
-                h: tileset.sourceHeight,
-            },
-            scale: 1,
-        },
-    };
-    return sheet;
 }
