@@ -8,6 +8,7 @@ import {
     type TilesetRef,
     type Tileset,
     type TiledChild,
+    getTilesetPrefix,
 } from './map';
 
 
@@ -79,23 +80,8 @@ function parseObjectProperties(node: Element): TiledProperties {
 export async function loadSpritesheetFromTileset(
     tileset: Tileset,
 ): Promise<PIXI.Spritesheet> {
-    function getPath(url: string): string {
-        try {
-             const path = new URL(url).pathname;
-             if (path) {
-                 return path;
-             }
-        } catch(error: any) {
-            if (error.name !== 'TypeError') {
-                throw error;
-            }
-        }
-        return url;
-    }
-    function getPrefix(url: string): string {
-        return getPath(removeExtension(url)) + '-';
-    }
-    const data = makeSpritesheetFromTileset(tileset, getPrefix(tileset.source));
+    const prefix = getTilesetPrefix(tileset);
+    const data = makeSpritesheetFromTileset(tileset, prefix);
     const texture = await PIXI.Assets.load(tileset.source);
     const sheet = new PIXI.Spritesheet(texture, data);
     await sheet.parse();
@@ -155,12 +141,6 @@ export function makeSpritesheetFromTileset(
         },
     };
     return sheet;
-}
-
-
-function removeExtension(fileName: string): string {
-    const index = fileName.lastIndexOf('.');
-    return fileName.slice(0, index);
 }
 
 

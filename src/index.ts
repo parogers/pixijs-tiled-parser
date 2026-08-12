@@ -1,22 +1,16 @@
 
 import * as PIXI from 'pixi.js';
 import { loadTiledMap } from './tiled-parsing';
-import {
+export {
     type TiledMap,
     getTiledGridLayers,
     getTiledObjectGroups,
     getTiledGroups,
     getTiledObjects,
+    getTiledMapGrid
 } from './map';
 
-export {
-    TiledMap,
-    loadTiledMap,
-    getTiledGridLayers,
-    getTiledObjectGroups,
-    getTiledGroups,
-    getTiledObjects,
-}
+export { loadTiledMap }
 
 
 const TILED_MAP_LOADER = {
