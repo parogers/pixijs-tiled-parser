@@ -57,6 +57,7 @@ function parseTileset(text: string, baseURL: string): Tileset {
         source: baseURL + getAttribute(image, 'source'),
         sourceWidth: getIntAttribute(image, 'width'),
         sourceHeight: getIntAttribute(image, 'height'),
+        spritesheet: null,
     };
 }
 
@@ -77,14 +78,14 @@ function parseObjectProperties(node: Element): TiledProperties {
 
 export async function loadSpritesheetFromTileset(
     tileset: Tileset,
-): PIXI.SpritesheetData {
+): Promise<PIXI.Spritesheet> {
     function getPath(url: string): string {
         try {
              const path = new URL(url).pathname;
              if (path) {
                  return path;
              }
-        } catch(error) {
+        } catch(error: any) {
             if (error.name !== 'TypeError') {
                 throw error;
             }

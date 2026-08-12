@@ -26,12 +26,16 @@ const TILED_MAP_LOADER = {
         name: 'pixijs-tiled-parser-map-loader',
     },
     getCacheableAssets(keys: string[], asset: TiledMap) {
-        const result = {};
+        const result: any = {};
         keys.forEach(key => {
             result[key] = asset;
         })
         asset.tilesetRefs.forEach(tilesetRef => {
-            Object.entries(tilesetRef.tileset.spritesheet.textures).forEach(([key, value]) => {
+            const spritesheet = tilesetRef.tileset?.spritesheet;
+            if (!spritesheet) {
+                return;
+            }
+            Object.entries(spritesheet.textures).forEach(([key, value]) => {
                 result[key] = value;
             });
         });
