@@ -83,3 +83,29 @@ export function isTiledObjectGroup(data: unknown): data is TiledObjectGroup {
     const group = data as TiledObjectGroup;
     return !!(group && group.objects !== undefined);
 }
+
+
+export function isTiledGroup(data: unknown): data is TiledGroup {
+    const group = data as TiledGroup;
+    return !!(group && group.children !== undefined && group.name !== undefined);
+}
+
+
+export function getTiledGridLayers(map: TiledMap): TiledGridLayer[] {
+    return map.children.filter(isTiledGridLayer);
+}
+
+
+export function getTiledObjectGroups(map: TiledMap): TiledObjectGroup[] {
+    return map.children.filter(isTiledObjectGroup);
+}
+
+
+export function getTiledGroups(map: TiledMap): TiledGroup[] {
+    return map.children.filter(isTiledGroup);
+}
+
+
+export function getTiledObjects(map: TiledMap): TiledObject[] {
+    return map.children.filter(isTiledObjectGroup).flatMap(group => group.objects);
+}

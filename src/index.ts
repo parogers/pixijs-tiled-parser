@@ -1,15 +1,25 @@
 
 import * as PIXI from 'pixi.js';
 import { loadTiledMap } from './tiled-parsing';
-import { type TiledMap } from './map';
+import {
+    type TiledMap,
+    getTiledGridLayers,
+    getTiledObjectGroups,
+    getTiledGroups,
+    getTiledObjects,
+} from './map';
 
 export {
     TiledMap,
     loadTiledMap,
+    getTiledGridLayers,
+    getTiledObjectGroups,
+    getTiledGroups,
+    getTiledObjects,
 }
 
 
-export const TILED_MAP_LOADER = {
+const TILED_MAP_LOADER = {
     id: 'pixijs-tiled-parser/map-loader',
     extension: {
         type: PIXI.ExtensionType.LoadParser,
@@ -35,3 +45,10 @@ export const TILED_MAP_LOADER = {
         return map;
     },
 };
+
+
+export function makeTiledParserExtension() {
+    // TODO - placeholder
+    // Eventually this function will support config options
+    return TILED_MAP_LOADER;
+}
