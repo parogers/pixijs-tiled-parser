@@ -7,7 +7,8 @@ export type TiledProperties = { [name: string]: any };
 
 export type TiledGridLayer = {
     name: string;
-    grid: number[][];
+    grid: string[][];
+    rawGrid: number[][];
 };
 
 
@@ -108,30 +109,6 @@ export function getTiledGroups(map: TiledMap): TiledGroup[] {
 
 export function getTiledObjects(map: TiledMap): TiledObject[] {
     return map.children.filter(isTiledObjectGroup).flatMap(group => group.objects);
-}
-
-
-export function getTiledMapGrid(map: TiledMap, layer: TiledGrid): string[][] {
-    function findTilesetRef(index: number): TilesetRef|null {
-        const ref = map.tilesetRefs.find(ref => {
-            return index >= ref.firstGID && index <= ref.firstGID + ref.tileset.tileCount - 1;
-        });
-        return ref ?? null;
-    }
-    return layer.grid.map(
-        row => (
-            row.map(index => {
-                if (index === 0) {
-                    return null;
-                }
-                const ref = findTilesetRef(index);
-                if (!ref) {
-                    throw Error(`invalid grid index: ${index}`);
-                }
-                return getTilesetPrefix(ref.tileset) + (index - ref.firstGID + 1);
-            })
-        )
-    );
 }
 
 

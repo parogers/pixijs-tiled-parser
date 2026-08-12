@@ -23,9 +23,9 @@ test('loads a parses an empty map', async () => {
     expect(map.properties).toEqual({});
     expect(map.children.length).toEqual(1);
     expect(map.children[0].name).toBe('Tile Layer 1');
-    expect(map.children[0].grid.length).toBe(24);
-    expect(map.children[0].grid[0].length).toBe(32);
-    expect(map.children[0].grid[0][0]).toBe(0);
+    expect(map.children[0].rawGrid.length).toBe(24);
+    expect(map.children[0].rawGrid[0].length).toBe(32);
+    expect(map.children[0].rawGrid[0][0]).toBe(0);
 });
 
 
@@ -79,16 +79,38 @@ test('loads tilesets and layers', async () => {
     expect(map.properties).toEqual({});
     expect(map.children.length).toEqual(2);
     expect(map.children[0].name).toBe('Tile Layer 1');
-    expect(map.children[0].grid.length).toBe(4);
-    expect(map.children[0].grid[0].length).toBe(3);
-    expect(map.children[0].grid[0][0]).toBe(1);
-    expect(map.children[0].grid[1][1]).toBe(2);
-    expect(map.children[0].grid[3][2]).toBe(0);
+    expect(map.children[0].rawGrid.length).toBe(4);
+    expect(map.children[0].rawGrid[0].length).toBe(3);
+    expect(map.children[0].rawGrid[0][0]).toBe(1);
+    expect(map.children[0].rawGrid[1][1]).toBe(2);
+    expect(map.children[0].rawGrid[3][2]).toBe(0);
     expect(map.children[1].name).toBe('Tile Layer 2');
-    expect(map.children[1].grid.length).toBe(4);
-    expect(map.children[1].grid[0].length).toBe(3);
-    expect(map.children[1].grid[0][0]).toBe(10);
-    expect(map.children[1].grid[1][1]).toBe(2);
+    expect(map.children[1].rawGrid.length).toBe(4);
+    expect(map.children[1].rawGrid[0].length).toBe(3);
+    expect(map.children[1].rawGrid[0][0]).toBe(10);
+    expect(map.children[1].rawGrid[1][1]).toBe(2);
+});
+
+
+test('converts raw numeric grid into grid of sprite names', async () => {
+    const map = await loadTiledMap('tests/mixed-tilesets.tmx');
+    expect(map.children[0].grid).toEqual([
+        [
+            'tests/tiles-1',
+            'tests/tiles-2',
+            'tests/tiles-3',
+        ],
+        [
+            null,
+            'tests/tiles2-9',
+            null,
+        ],
+        [
+            'tests/tiles2-1',
+            null,
+            'tests/tiles-9',
+        ],
+    ]);
 });
 
 

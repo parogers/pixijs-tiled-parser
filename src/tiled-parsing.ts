@@ -9,6 +9,7 @@ import {
     type Tileset,
     type TiledChild,
     getTilesetPrefix,
+    getTiledGridLayers,
 } from './map';
 
 
@@ -153,6 +154,30 @@ async function loadTileset(url: string): Promise<Tileset> {
 }
 
 
+function makeTiledMapGrid(map: TiledMap, rawGrid: number[][]): string[][] {
+    function findTilesetRef(index: number): TilesetRef|null {
+        const ref = map.tilesetRefs.find(ref => {
+            return index >= ref.firstGID && index <= ref.firstGID + ref.tileset.tileCount - 1;
+        });
+        return ref ?? null;
+    }
+    return rawGrid.map(
+        row => (
+            row.map(index => {
+                if (index === 0) {
+                    return null;
+                }
+                const ref = findTilesetRef(index);
+                if (!ref) {
+                    throw Error(`invalid grid index: ${index}`);
+                }
+                return getTilesetPrefix(ref.tileset) + (index - ref.firstGID + 1);
+            })
+        )
+    );
+}
+
+
 async function parseChildren(doc: Element, baseURL: string): Promise<{
     tilesetRefs: TilesetRef[],
     children: TiledChild[],
@@ -175,7 +200,8 @@ async function parseChildren(doc: Element, baseURL: string): Promise<{
             const height = getIntAttribute(child, 'height');
             const layer = {
                 name: child.getAttribute('name') ?? '',
-                grid: parseGrid(child.children[0].textContent, width, height),
+                grid: null,
+                rawGrid: parseGrid(child.children[0].textContent, width, height),
             };
             children.push(layer);
         } else if (child.tagName === 'objectgroup') {
@@ -266,6 +292,11 @@ export async function loadTiledMap(url: string): Promise<TiledMap> {
         throw Error('unable to parse tiled map');
     }
     const map = await parseTiledMap(data.documentElement, baseURL);
+
+    getTiledGridLayers(map).forEach(layer => {
+        layer.grid = makeTiledMapGrid(map, layer.rawGrid);
+    });
+
     // for (let sub of map.groups) {
     //     let startRow = map.rows;
     //     let startCol = map.cols;
