@@ -128,7 +128,7 @@ export function getTiledMapGrid(map: TiledMap, layer: TiledGrid): string[][] {
                 if (!ref) {
                     throw Error(`invalid grid index: ${index}`);
                 }
-                return getTilesetPrefix(ref.tileset) + (index - ref.firstGID);
+                return getTilesetPrefix(ref.tileset) + (index - ref.firstGID + 1);
             })
         )
     );

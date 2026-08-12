@@ -271,7 +271,7 @@ test('mapping grid to sprites', () => {
                 name: 'grid',
                 grid: [
                     [0, 1, 2],
-                    [10, 2, 3],
+                    [10, 2, 9],
                     [4, 5, 16],
                 ],
             },
@@ -281,18 +281,18 @@ test('mapping grid to sprites', () => {
     expect(sprites).toEqual([
         [
             null,
-            'tiles-0',
-            'tiles-1',
-        ],
-        [
-            'tiles2-0',
             'tiles-1',
             'tiles-2',
         ],
         [
-            'tiles-3',
+            'tiles2-1',
+            'tiles-2',
+            'tiles-9',
+        ],
+        [
             'tiles-4',
-            'tiles2-6',
+            'tiles-5',
+            'tiles2-7',
         ],
     ]);
 });

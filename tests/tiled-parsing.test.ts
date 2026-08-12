@@ -95,9 +95,10 @@ test('loads tilesets and layers', async () => {
 test('loads spritesheets for tilesets', async () => {
     const map = await loadTiledMap('tests/grid-layers.tmx');
     expect(map.tilesetRefs[0].tileset.spritesheet).toBeTruthy();
-    expect(map.tilesetRefs[0].tileset.spritesheet.textures['tests/tiles-0']).toBeTruthy();
+    expect(map.tilesetRefs[0].tileset.spritesheet.textures['tests/tiles-1']).toBeTruthy();
+    expect(map.tilesetRefs[0].tileset.spritesheet.textures['tests/tiles-9']).toBeTruthy();
     expect(map.tilesetRefs[1].tileset.spritesheet).toBeTruthy();
-    expect(map.tilesetRefs[1].tileset.spritesheet.textures['tests/tiles2-0']).toBeTruthy();
+    expect(map.tilesetRefs[1].tileset.spritesheet.textures['tests/tiles2-1']).toBeTruthy();
 });
 
 

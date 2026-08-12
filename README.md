@@ -42,7 +42,7 @@ async function load() {
     // Automatically loads tilesets as PIXI spritesheets
     map.tilesetRefs[0].tileset.spritesheet
     // Automatically named after the tilesheet plus image index
-    map.tilesetRefs[0].tileset.spritesheet.textures['tiles-0']
+    map.tilesetRefs[0].tileset.spritesheet.textures['tiles-1']
 }
 
 ```

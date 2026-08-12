@@ -99,8 +99,8 @@ export function makeSpritesheetFromTileset(
         for (let col = 0; col < tileset.columns; col++) {
             const x = tileset.margin + tileset.spacing*col + tileset.tileWidth*col;
             const y = tileset.margin + tileset.spacing*row + tileset.tileHeight*row;
-            const index = Object.keys(tiles).length;
-            if (index >= tileset.tileCount) {
+            const index = Object.keys(tiles).length+1;
+            if (index > tileset.tileCount) {
                 break;
             }
             const name = tileNamePrefix + index;
