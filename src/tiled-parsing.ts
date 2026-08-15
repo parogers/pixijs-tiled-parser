@@ -8,6 +8,7 @@ import {
     type TilesetRef,
     type Tileset,
     type TiledChild,
+    type TiledSpriteRef,
     getTilesetPrefix,
     getTiledGridLayers,
 } from './map';
@@ -154,10 +155,13 @@ async function loadTileset(url: string): Promise<Tileset> {
 }
 
 
-function makeTiledMapGrid(map: TiledMap, rawGrid: number[][]): string[][] {
+function makeTiledMapGrid(map: TiledMap, rawGrid: number[][]): TiledSpriteRef[][] {
     function findTilesetRef(index: number): TilesetRef|null {
         const ref = map.tilesetRefs.find(ref => {
-            return index >= ref.firstGID && index <= ref.firstGID + ref.tileset.tileCount - 1;
+            return (
+                ref.tileset &&
+                index >= ref.firstGID && index <= ref.firstGID + ref.tileset.tileCount - 1
+            );
         });
         return ref ?? null;
     }
@@ -168,7 +172,7 @@ function makeTiledMapGrid(map: TiledMap, rawGrid: number[][]): string[][] {
                     return null;
                 }
                 const ref = findTilesetRef(index);
-                if (!ref) {
+                if (!ref || !ref.tileset) {
                     throw Error(`invalid grid index: ${index}`);
                 }
                 return getTilesetPrefix(ref.tileset) + (index - ref.firstGID + 1);
@@ -200,7 +204,7 @@ async function parseChildren(doc: Element, baseURL: string): Promise<{
             const height = getIntAttribute(child, 'height');
             const layer = {
                 name: child.getAttribute('name') ?? '',
-                grid: null,
+                grid: [], // filled in later
                 rawGrid: parseGrid(child.children[0].textContent, width, height),
             };
             children.push(layer);

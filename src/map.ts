@@ -4,10 +4,11 @@ import * as PIXI from 'pixi.js';
 
 export type TiledProperties = { [name: string]: any };
 
+export type TiledSpriteRef = string|null;
 
 export type TiledGridLayer = {
     name: string;
-    grid: string[][];
+    grid: TiledSpriteRef[][];
     rawGrid: number[][];
 };
 
