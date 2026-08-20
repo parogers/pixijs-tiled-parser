@@ -7,6 +7,7 @@ export {
     getTiledObjectGroups,
     getTiledGroups,
     getTiledObjects,
+    findTiledGridLayer,
 } from './map';
 
 export { loadTiledMap, TiledMap }

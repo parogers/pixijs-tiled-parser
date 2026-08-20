@@ -133,3 +133,10 @@ export function getTilesetPrefix(tileset: Tileset): string {
     }
     return getPath(removeExtension(tileset.source)) + '-';
 }
+
+
+export function findTiledGridLayer(map: TiledMap, name: string): TiledGridLayer|null {
+    return map.children.find(child => {
+        return isTiledGridLayer(child) && child.name === name;
+    }) ?? null;
+}
